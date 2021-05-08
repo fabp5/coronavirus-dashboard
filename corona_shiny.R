@@ -48,11 +48,15 @@ country_all <- inner_join(country_codes_slugs,select(countries_pop,c(country_cod
 # Define App UI -----------------------------------------------------------
 
 ui <- fluidPage(
+  h2("Coronavirus case rate dashboard"),
+  p("This dashboard shows the 7-day coronavirus case rate for all countries."),
   selectInput(inputId = "query_country",
               label = "Choose a country:",
               choices = c("",country_all$official_name_en)),
   submitButton("Submit"),
-  verbatimTextOutput("txt"),
+  hr(),
+  textOutput("txt"),
+  br(),
   uiOutput("ui_plot_caserate")
   )
 
@@ -77,9 +81,12 @@ server <- function(input, output) {
       c_response <- content(c_request, as = "text", encoding = "UTF-8")
       c_df <- fromJSON(c_response, flatten = TRUE) %>%  data.frame()
       
+      print(nrow(c_df))
+      
       if(nrow(c_df)>0) {
         c_df %>%
-          mutate(new_cases = Cases - lag(Cases),
+          # correct negative new cases to zero
+          mutate(new_cases = pmax(Cases - lag(Cases),0),
                  Date = as.Date(Date),
                  week_rate = round(
                    (roll_sum(new_cases, 7, align = "right", fill = NA) / c_pop * 100000),
@@ -95,15 +102,18 @@ server <- function(input, output) {
   
   output$txt <- renderText({
     if(nchar(input$query_country)>1) {
+      pop <- country_all$pop[tolower(country_all$official_name_en) == tolower(input$query_country)]
       if(nrow(country_df())>0) {
-        pop <- country_all$pop[tolower(country_all$official_name_en) == tolower(input$query_country)]
-        paste0("You have selected ",
-               toupper(input$query_country),
+        paste0(input$query_country,
                ", population ",
                format(pop,big.mark=",",scientific=FALSE),
-               ".")
+               ", has reported ",
+               format(last(country_df()$Cases),big.mark=",",scientific=FALSE)
+               ," total cases.")
       } else {
-        paste(input$query_country,"has no reported Coronavirus cases.")
+        paste0(input$query_country,
+              ", population ",
+              format(pop,big.mark=",",scientific=FALSE),", has no reported cases.")
       }
     }
   })
@@ -111,18 +121,24 @@ server <- function(input, output) {
   ## Case rate plot --------------------------------------------------------------------------------------
   
   output$plot_caserate <- renderPlot({
-    ggplot(country_df(),aes(x=Date,y=week_rate)) +
-      geom_line(size=1) +
-      geom_hline(yintercept=20,size=1,color="#00b3b3") +
-      annotate(geom="text", x = max(country_df()$Date)+3,
-               y=tail(country_df()$week_rate,n=1),
-               label=tail(country_df()$week_rate,n=1)) +
-      ggtitle(paste("Coronavirus case rate in",input$query_country)) +
-      ylab("Cases per 100,000 people per week") +
-      theme_minimal() +
-      theme(axis.text=element_text(size=16),
-            axis.title=element_text(size=14),
-            plot.title=element_text(size=22))
+    if(nrow(country_df())>0) {
+      ggplot(country_df(),aes(x=Date,y=week_rate)) +
+        geom_line(size=1,color="#444444") +
+        geom_hline(yintercept=20,size=1,color="#00b3b3") +
+        annotate(geom="text", x = max(country_df()$Date)+3,
+                 y=tail(country_df()$week_rate,n=1),
+                 label=tail(country_df()$week_rate,n=1)) +
+        ggtitle(paste("Coronavirus case rate in",input$query_country)) +
+        ylab("Cases per 100,000 per week") +
+        scale_x_date(date_breaks = "1 month",
+                     date_labels = "%b %Y") +
+        theme_minimal() +
+        theme(axis.text=element_text(size=16),
+              axis.text.x=element_text(angle = -90, hjust = 0.5, vjust = 0.5),
+              axis.title=element_text(size=14),
+              axis.title.x=element_blank(),
+              plot.title=element_text(size=20))
+    }
   })
 
   ## Conditional UI for case rate plot ------------------------------------------------------------------
