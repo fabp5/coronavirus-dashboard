@@ -10,22 +10,20 @@ library(shiny)
 
 # Read in data ----
 
-# country code from https://datahub.io/core/country-codes
-# country pop from world bank: https://data.worldbank.org/indicator/SP.POP.TOTL
-# corona api https://documenter.getpostman.com/view/10808728/SzS8rjbc#7934d316-f751-4914-9909-39f1901caeb8
-
-countries_pop <- read_csv("ref/country_pop.csv",
+countries_pop <- read_csv("data/country_pop.csv",
                           col_types = cols(`Indicator Code` = col_skip(),
                                            `Indicator Name` = col_skip(),
                                            X65 = col_skip()),
                           skip = 4)
+
+# Filter to columns of interest
 countries_pop <- select(countries_pop,
                         country_name = `Country Name`,
                         country_code = `Country Code`,
                         pop = `2019`)
 
 # Read in country ISO codes for matching
-country_codes <- read_csv("ref/country-codes_csv.csv")
+country_codes <- read_csv("data/country-codes_csv.csv")
 country_codes <- country_codes %>%
   select(official_name_en,
          iso2 = `ISO3166-1-Alpha-2`,
@@ -88,8 +86,7 @@ server <- function(input, output) {
           # correct negative new cases to zero
           mutate(new_cases = pmax(Cases - lag(Cases),0),
                  Date = as.Date(Date),
-                 week_rate = round(
-                   (roll_sum(new_cases, 7, align = "right", fill = NA) / c_pop * 100000),
+                 week_rate = round((roll_sum(new_cases, 7, align = "right", fill = NA) / c_pop * 100000),
                    digits=2))
       } else {
         c_df
