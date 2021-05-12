@@ -10,4 +10,5 @@ This dashboard was created to monitor the 7-day COVID-19 case rate in different 
 
 ### Using the app
 Select the country of interest and click submit to view the 7-day case rate over time in black. The green line shows a rate of 20 per 100,000 people per week.
+
 ![App screenshot](corona_screenshot.png)
