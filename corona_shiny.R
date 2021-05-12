@@ -13,8 +13,16 @@ library(shiny)
 countries_pop <- read_csv("data/country_pop.csv",
                           col_types = cols(`Indicator Code` = col_skip(),
                                            `Indicator Name` = col_skip(),
-                                           X65 = col_skip()),
+                                           `2020` = col_skip(),
+                                           X66 = col_skip()),
                           skip = 4)
+
+# One country (Eritrea) is missing a reported population for 2019
+# For the purposes of this dashboard use the latest reported population (2011)
+countries_pop %>% filter(is.na(`2019`)) # View observations with no reported population in 2019
+countries_pop$`2019`[countries_pop$`Country Name` == "Eritrea"] <-
+  countries_pop[countries_pop$`Country Name` == "Eritrea",] %>%
+  unlist %>% na.omit %>% last %>% as.numeric()
 
 # Filter to columns of interest
 countries_pop <- select(countries_pop,
@@ -47,7 +55,7 @@ country_all <- inner_join(country_codes_slugs,select(countries_pop,c(country_cod
 
 ui <- fluidPage(
   h2("Coronavirus case rate dashboard"),
-  p("This dashboard shows the 7-day coronavirus case rate for all countries."),
+  p("This dashboard shows the 7-day coronavirus case rate for each country with reported COVID-19 cases."),
   selectInput(inputId = "query_country",
               label = "Choose a country:",
               choices = c("",country_all$official_name_en)),
@@ -122,9 +130,10 @@ server <- function(input, output) {
       ggplot(country_df(),aes(x=Date,y=week_rate)) +
         geom_line(size=1,color="#444444") +
         geom_hline(yintercept=20,size=1,color="#00b3b3") +
-        annotate(geom="text", x = max(country_df()$Date)+3,
+        annotate(geom="text", x = max(country_df()$Date)+12,
                  y=tail(country_df()$week_rate,n=1),
-                 label=tail(country_df()$week_rate,n=1)) +
+                 label=tail(country_df()$week_rate,n=1),
+                 size=5) +
         ggtitle(paste("Coronavirus case rate in",input$query_country)) +
         ylab("Cases per 100,000 per week") +
         scale_x_date(date_breaks = "1 month",
@@ -136,7 +145,7 @@ server <- function(input, output) {
               axis.title.x=element_blank(),
               plot.title=element_text(size=20))
     }
-  })
+  }, width=900)
 
   ## Conditional UI for case rate plot ------------------------------------------------------------------
   
