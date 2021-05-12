@@ -56,6 +56,7 @@ country_all <- inner_join(country_codes_slugs,select(countries_pop,c(country_cod
 ui <- fluidPage(
   h2("Coronavirus case rate dashboard"),
   p("This dashboard shows the 7-day coronavirus case rate for each country with reported COVID-19 cases."),
+  p("Rates are compared to the value of 20 per 100,000 people per week used to define UK travel corridors in Summer/Autumn 2020."),
   selectInput(inputId = "query_country",
               label = "Choose a country:",
               choices = c("",country_all$official_name_en)),
