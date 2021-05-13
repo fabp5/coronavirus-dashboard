@@ -9,6 +9,8 @@ This dashboard was created to monitor the 7-day COVID-19 case rate in different 
 * COVID-19 case numbers are accessed through the [COVID-19 API](https://covid19api.com/), which sources data from the [Johns Hopkins COVID-19 Data Repository](https://github.com/CSSEGISandData/COVID-19).
 
 ### Using the app
+**[The app can be accessed here](https://fabp5.shinyapps.io/corona/).**
+
 Select the country of interest and click submit to view the 7-day case rate over time in black. The green line shows a rate of 20 per 100,000 people per week.
 
 ![App screenshot](corona_screenshot.png)
